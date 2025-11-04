@@ -1,0 +1,9 @@
+node_modules
+dist
+.venv
+.mypy_cache
+__pycache__
+python_service/.venv
+python_service/.hrequests-cache
+*.pyc
+

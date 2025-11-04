@@ -1,0 +1,32 @@
+{
+  "name": "hrequests-js",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "TypeScript client and Python microservice wrapper for the hrequests library",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "lint": "eslint 'src/**/*.ts'",
+    "test": "npm run build && node ./tests/get-ip.test.js"
+  },
+  "keywords": [
+    "hrequests",
+    "http",
+    "scraping",
+    "browser",
+    "typescript",
+    "python"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "undici": "^6.19.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "eslint": "^8.57.1",
+    "typescript": "^5.5.2"
+  }
+}
