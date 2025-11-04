@@ -9,6 +9,14 @@ export interface SessionOptions {
   [key: string]: unknown;
 }
 
+export interface RenderOptions {
+  headless?: boolean;
+  mockHuman?: boolean;
+  extensions?: string | string[];
+  engine?: unknown;
+  [key: string]: unknown;
+}
+
 export interface RequestOptions {
   method?: string;
   params?: Record<string, unknown>;
@@ -21,6 +29,7 @@ export interface RequestOptions {
   allowRedirects?: boolean;
   history?: boolean;
   proxy?: string;
+  render?: boolean | RenderOptions;
   [key: string]: unknown;
 }
 

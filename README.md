@@ -67,6 +67,18 @@ python -m hrequests install
    await response.delete();
    ```
 
+### Headless browser rendering
+
+Pass `render` options to any request method to fetch a page through the hrequests headless browser. The response metadata and body resolve after the browser session closes, so you still interact with the result using the normal helpers:
+
+```ts
+const rendered = await hrequests.get("https://example.com", {
+  render: { headless: true },
+});
+const html = await rendered.text();
+await rendered.delete();
+```
+
 For advanced scenarios (custom ports, long-lived clients, etc.), instantiate your own manager:
 
 ```ts
@@ -104,7 +116,7 @@ The FastAPI app exposes:
 | `host` | `127.0.0.1` | Hostname the Python service binds to. |
 | `port` | `39231` | TCP port for the service. |
 | `pythonExecutable` | auto-detected | Override the Python binary (`python3`, virtualenv path, etc.). |
-| `logLevel` | `info` | Passed through to Uvicorn (`critical`, `error`, `warning`, `info`, `debug`, `trace`). |
+| `logLevel` | `critical` | Passed through to Uvicorn (`critical`, `error`, `warning`, `info`, `debug`, `trace`). |
 | `startupTimeoutMs` | `20000` | How long to wait for the health check to succeed. |
 | `installDependencies` | `true` | Skip automatic `pip install` if you manage dependencies yourself. |
 | `extraEnv` | `{}` | Additional env vars for the Python process. |

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import re
 from collections.abc import Iterable
 from datetime import timedelta
 from typing import Any, Dict, Optional
@@ -47,6 +48,7 @@ class RequestPayload(BaseModel):
     allow_redirects: Optional[bool] = Field(None, alias="allowRedirects")
     history: Optional[bool] = None
     proxy: Optional[Any] = None
+    render: Optional[Any] = None
     model_config = ConfigDict(populate_by_name=True, extra="allow")
 
 
@@ -135,6 +137,39 @@ sessions = SessionStore()
 responses = ResponseStore()
 
 
+def _to_snake_case(value: str) -> str:
+    value = re.sub("(.)([A-Z][a-z]+)", r"\\1_\\2", value)
+    value = re.sub("([a-z0-9])([A-Z])", r"\\1_\\2", value)
+    return value.lower()
+
+
+def _normalize_render_options(render: Any) -> Dict[str, Any]:
+    if isinstance(render, bool):
+        return {"headless": True} if render else {}
+
+    if isinstance(render, dict):
+        converted: Dict[str, Any] = {}
+        for key, value in render.items():
+            if not isinstance(key, str):
+                continue
+            converted[_to_snake_case(key)] = value
+
+        converted.setdefault("headless", True)
+        return converted
+
+    raise HTTPException(status_code=400, detail="render option must be a boolean or object")
+
+
+def _render_response_sync(response: hrequests.response.Response, options: Dict[str, Any]) -> None:
+    with response.render(**options):
+        pass
+
+
+async def _render_response(response: hrequests.response.Response, options: Dict[str, Any]) -> None:
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, _render_response_sync, response, options)
+
+
 async def lifespan(_: FastAPI):
     try:
         yield
@@ -198,6 +233,9 @@ async def execute_request(payload: RequestPayload) -> JSONResponse:
     if json_body is not None:
         request_data["json"] = json_body
 
+    render_spec = request_data.pop("render", None)
+    render_requested = render_spec not in (None, False)
+
     if session_id:
         session = await sessions.get(session_id)
         request_callable = getattr(session, method, None)
@@ -211,6 +249,15 @@ async def execute_request(payload: RequestPayload) -> JSONResponse:
         response = request_callable(url, **request_data)
     except Exception as exc:  # noqa: BLE001 - surface any request errors
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    if render_requested:
+        render_options = _normalize_render_options(render_spec)
+        if render_options:
+            try:
+                await _render_response(response, render_options)
+            except Exception as exc:  # noqa: BLE001 - propagate render failures
+                close_response(response)
+                raise HTTPException(status_code=500, detail=f"Browser render failed: {exc}") from exc
 
     response_id = await responses.add(response)
     metadata = response_metadata(response, response_id)
@@ -271,7 +318,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="hrequests FastAPI bridge")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=39231)
-    parser.add_argument("--log-level", default="info")
+    parser.add_argument("--log-level", default="critical")
     args = parser.parse_args()
 
     import uvicorn
