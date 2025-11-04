@@ -1,6 +1,6 @@
 {
   "name": "hrequests-js",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "TypeScript client and Python microservice wrapper for the hrequests library",
   "main": "dist/index.js",

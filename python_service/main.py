@@ -227,8 +227,9 @@ def _get_media_type(response: hrequests.response.Response) -> str:
 @app.get("/responses/{response_id}/text")
 async def read_text(response_id: str) -> PlainTextResponse:
     response = await responses.get(response_id)
-    encoding = response.encoding or "utf-8"
-    return PlainTextResponse(response.text or "", media_type="text/plain", encoding=encoding)
+    content = response.text or ""
+    media_type = "text/plain; charset=" + (response.encoding or "utf-8")
+    return PlainTextResponse(content, media_type=media_type)
 
 
 @app.get("/responses/{response_id}/json")
