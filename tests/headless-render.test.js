@@ -11,12 +11,11 @@ async function main() {
     });
 
     const html = await response.text();
-    console.log("HTML:", html);
     if (typeof html !== "string" || html.length === 0) {
       throw new Error("Expected non-empty HTML from headless render");
     }
 
-    if (!/<!doctype html>/i.test(html)) {
+    if (!/<!doctype html/i.test(html)) {
       throw new Error("Expected rendered response to include an HTML document");
     }
   } finally {

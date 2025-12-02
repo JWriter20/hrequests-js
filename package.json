@@ -2,7 +2,7 @@
   "name": "hrequests-js",
   "version": "0.1.2",
   "type": "module",
-  "description": "TypeScript client and Python microservice wrapper for the hrequests library",
+  "description": "TypeScript port of hrequests library running locally",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -22,6 +22,15 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "camoufox-js": "^0.8.3",
+    "cheerio": "^1.1.2",
+    "fetch-cookie": "^3.1.0",
+    "header-generator": "^2.1.78",
+    "koffi": "^2.14.1",
+    "patchright": "^1.57.0",
+    "patchright-core": "^1.57.0",
+    "playwright": "^1.57.0",
+    "tough-cookie": "^6.0.0",
     "undici": "^6.19.8"
   },
   "devDependencies": {
