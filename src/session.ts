@@ -32,7 +32,7 @@ export interface TLSSessionOptions extends TLSClientOptions {
   /** OS to use in header [win, mac, lin] */
   os?: OSType;
   /** Custom headers */
-  headers?: Record<string, string>;
+  headers?: Record<string, string> | CaseInsensitiveDict;
   /** Indicates if session is temporary */
   temp?: boolean;
   /** Verify the server's TLS certificate */
