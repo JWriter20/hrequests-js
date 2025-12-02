@@ -2,10 +2,7 @@
  * Toolbelt utilities for hrequests-js
  * Mirrors the Python hrequests toolbelt
  */
-
-import { createReadStream, statSync } from 'node:fs';
 import { basename } from 'node:path';
-import { Readable } from 'node:stream';
 
 /**
  * A case-insensitive dictionary for HTTP headers
@@ -13,6 +10,9 @@ import { Readable } from 'node:stream';
  */
 export class CaseInsensitiveDict implements Map<string, string> {
   private _store: Map<string, [string, string]> = new Map();
+
+  // Index signature to make CaseInsensitiveDict assignable to Record<string, string>
+  [key: string]: any;
 
   constructor(data?: Record<string, string> | Map<string, string> | CaseInsensitiveDict | Iterable<[string, string]>) {
     if (data) {

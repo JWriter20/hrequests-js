@@ -238,6 +238,31 @@ export const asyncOptions = (url: string, options?: TLSRequestOptions & Partial<
 /**
  * Send a request (sync-style API that returns a promise)
  */
+// Overload: single URL, no nohup -> Response
+export function request(
+  method: Method,
+  url: string,
+  options?: TLSRequestOptions & Partial<TLSSessionOptions> & { nohup?: false }
+): Promise<Response>;
+// Overload: single URL, nohup true -> LazyTLSRequest
+export function request(
+  method: Method,
+  url: string,
+  options: TLSRequestOptions & Partial<TLSSessionOptions> & { nohup: true }
+): Promise<LazyTLSRequest>;
+// Overload: URL array, no nohup -> (Response | FailedResponse)[]
+export function request(
+  method: Method,
+  url: string[],
+  options?: TLSRequestOptions & Partial<TLSSessionOptions> & { nohup?: false }
+): Promise<(Response | FailedResponse)[]>;
+// Overload: URL array, nohup true -> LazyTLSRequest[]
+export function request(
+  method: Method,
+  url: string[],
+  options: TLSRequestOptions & Partial<TLSSessionOptions> & { nohup: true }
+): Promise<LazyTLSRequest[]>;
+// Implementation
 export async function request(
   method: Method,
   url: string | string[],
@@ -278,21 +303,72 @@ async function requestList(
   return map(requests);
 }
 
-// Request shortcuts
-export const get = (url: string | string[], options?: TLSRequestOptions & Partial<TLSSessionOptions> & { nohup?: boolean }) =>
-  request('GET', url, options);
-export const post = (url: string | string[], options?: TLSRequestOptions & Partial<TLSSessionOptions> & { nohup?: boolean }) =>
-  request('POST', url, options);
-export const put = (url: string | string[], options?: TLSRequestOptions & Partial<TLSSessionOptions> & { nohup?: boolean }) =>
-  request('PUT', url, options);
-export const patch = (url: string | string[], options?: TLSRequestOptions & Partial<TLSSessionOptions> & { nohup?: boolean }) =>
-  request('PATCH', url, options);
-export const del = (url: string | string[], options?: TLSRequestOptions & Partial<TLSSessionOptions> & { nohup?: boolean }) =>
-  request('DELETE', url, options);
-export const head = (url: string | string[], options?: TLSRequestOptions & Partial<TLSSessionOptions> & { nohup?: boolean }) =>
-  request('HEAD', url, options);
-export const optionsReq = (url: string | string[], options?: TLSRequestOptions & Partial<TLSSessionOptions> & { nohup?: boolean }) =>
-  request('OPTIONS', url, options);
+// Request shortcuts with proper overloads
+type RequestShortcutOptions = TLSRequestOptions & Partial<TLSSessionOptions>;
+type FullRequestOptions = RequestShortcutOptions & { nohup?: boolean };
+
+// GET
+export function get(url: string, options?: RequestShortcutOptions & { nohup?: false }): Promise<Response>;
+export function get(url: string, options: RequestShortcutOptions & { nohup: true }): Promise<LazyTLSRequest>;
+export function get(url: string[], options?: RequestShortcutOptions & { nohup?: false }): Promise<(Response | FailedResponse)[]>;
+export function get(url: string[], options: RequestShortcutOptions & { nohup: true }): Promise<LazyTLSRequest[]>;
+export function get(url: string | string[], options: FullRequestOptions = {}): Promise<Response | (Response | FailedResponse)[] | LazyTLSRequest | LazyTLSRequest[]> {
+  return request('GET', url as string, options as any);
+}
+
+// POST
+export function post(url: string, options?: RequestShortcutOptions & { nohup?: false }): Promise<Response>;
+export function post(url: string, options: RequestShortcutOptions & { nohup: true }): Promise<LazyTLSRequest>;
+export function post(url: string[], options?: RequestShortcutOptions & { nohup?: false }): Promise<(Response | FailedResponse)[]>;
+export function post(url: string[], options: RequestShortcutOptions & { nohup: true }): Promise<LazyTLSRequest[]>;
+export function post(url: string | string[], options: FullRequestOptions = {}): Promise<Response | (Response | FailedResponse)[] | LazyTLSRequest | LazyTLSRequest[]> {
+  return request('POST', url as string, options as any);
+}
+
+// PUT
+export function put(url: string, options?: RequestShortcutOptions & { nohup?: false }): Promise<Response>;
+export function put(url: string, options: RequestShortcutOptions & { nohup: true }): Promise<LazyTLSRequest>;
+export function put(url: string[], options?: RequestShortcutOptions & { nohup?: false }): Promise<(Response | FailedResponse)[]>;
+export function put(url: string[], options: RequestShortcutOptions & { nohup: true }): Promise<LazyTLSRequest[]>;
+export function put(url: string | string[], options: FullRequestOptions = {}): Promise<Response | (Response | FailedResponse)[] | LazyTLSRequest | LazyTLSRequest[]> {
+  return request('PUT', url as string, options as any);
+}
+
+// PATCH
+export function patch(url: string, options?: RequestShortcutOptions & { nohup?: false }): Promise<Response>;
+export function patch(url: string, options: RequestShortcutOptions & { nohup: true }): Promise<LazyTLSRequest>;
+export function patch(url: string[], options?: RequestShortcutOptions & { nohup?: false }): Promise<(Response | FailedResponse)[]>;
+export function patch(url: string[], options: RequestShortcutOptions & { nohup: true }): Promise<LazyTLSRequest[]>;
+export function patch(url: string | string[], options: FullRequestOptions = {}): Promise<Response | (Response | FailedResponse)[] | LazyTLSRequest | LazyTLSRequest[]> {
+  return request('PATCH', url as string, options as any);
+}
+
+// DELETE
+export function del(url: string, options?: RequestShortcutOptions & { nohup?: false }): Promise<Response>;
+export function del(url: string, options: RequestShortcutOptions & { nohup: true }): Promise<LazyTLSRequest>;
+export function del(url: string[], options?: RequestShortcutOptions & { nohup?: false }): Promise<(Response | FailedResponse)[]>;
+export function del(url: string[], options: RequestShortcutOptions & { nohup: true }): Promise<LazyTLSRequest[]>;
+export function del(url: string | string[], options: FullRequestOptions = {}): Promise<Response | (Response | FailedResponse)[] | LazyTLSRequest | LazyTLSRequest[]> {
+  return request('DELETE', url as string, options as any);
+}
+
+// HEAD
+export function head(url: string, options?: RequestShortcutOptions & { nohup?: false }): Promise<Response>;
+export function head(url: string, options: RequestShortcutOptions & { nohup: true }): Promise<LazyTLSRequest>;
+export function head(url: string[], options?: RequestShortcutOptions & { nohup?: false }): Promise<(Response | FailedResponse)[]>;
+export function head(url: string[], options: RequestShortcutOptions & { nohup: true }): Promise<LazyTLSRequest[]>;
+export function head(url: string | string[], options: FullRequestOptions = {}): Promise<Response | (Response | FailedResponse)[] | LazyTLSRequest | LazyTLSRequest[]> {
+  return request('HEAD', url as string, options as any);
+}
+
+// OPTIONS
+export function optionsReq(url: string, options?: RequestShortcutOptions & { nohup?: false }): Promise<Response>;
+export function optionsReq(url: string, options: RequestShortcutOptions & { nohup: true }): Promise<LazyTLSRequest>;
+export function optionsReq(url: string[], options?: RequestShortcutOptions & { nohup?: false }): Promise<(Response | FailedResponse)[]>;
+export function optionsReq(url: string[], options: RequestShortcutOptions & { nohup: true }): Promise<LazyTLSRequest[]>;
+export function optionsReq(url: string | string[], options: FullRequestOptions = {}): Promise<Response | (Response | FailedResponse)[] | LazyTLSRequest | LazyTLSRequest[]> {
+  return request('OPTIONS', url as string, options as any);
+}
 
 /**
  * Concurrently converts a list of Requests to Responses
