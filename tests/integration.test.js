@@ -3,18 +3,18 @@ import hrequests, { shutdown } from "../dist/index.js";
 const IP_ENDPOINT = "https://httpbin.org/headers";
 
 function isValidIpString(ip) {
-  const ipv4Pattern = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
-  const ipv6Pattern = /^[0-9a-fA-F:]+$/;
-  return ipv4Pattern.test(ip) || ipv6Pattern.test(ip);
+    const ipv4Pattern = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
+    const ipv6Pattern = /^[0-9a-fA-F:]+$/;
+    return ipv4Pattern.test(ip) || ipv6Pattern.test(ip);
 }
 
 async function testBridgeRequest(browser, expectedUserAgentPart) {
     console.log(`Testing Bridge Request with ${browser}...`);
     const resp = await hrequests.get(IP_ENDPOINT, { browser });
-    const json = await resp.json();
+    const json = resp.json();
     const ua = json.headers['User-Agent'];
     console.log(`User-Agent: ${ua}`);
-    
+
     if (!ua.includes(expectedUserAgentPart)) {
         throw new Error(`Expected User-Agent to contain ${expectedUserAgentPart}, got ${ua}`);
     }
@@ -26,7 +26,7 @@ async function testRotation() {
     // Make 3 requests, should likely get different UAs if stateless requests generate new sessions
     for (let i = 0; i < 3; i++) {
         const resp = await hrequests.get(IP_ENDPOINT, { browser: 'chrome' });
-        const json = await resp.json();
+        const json = resp.json();
         uaSet.add(json.headers['User-Agent']);
     }
     console.log(`Unique User-Agents over 3 requests: ${uaSet.size}`);
@@ -34,7 +34,7 @@ async function testRotation() {
     // If it's always the same, rotation might not be working or pool is 1.
 }
 
-async function testRender(browser, expectedTitlePart) {
+async function testRender(browser) {
     console.log(`Testing Render with ${browser}...`);
     // Using a simpler page for speed
     const url = "https://example.com";
@@ -44,15 +44,22 @@ async function testRender(browser, expectedTitlePart) {
             headless: true
         }
     });
-    
-    const title = await resp.page.title();
-    console.log(`Page Title: ${title}`);
-    
-    if (!title.includes("Example Domain")) {
-        throw new Error(`Expected title 'Example Domain', got '${title}'`);
+
+    // resp is a Response with the rendered HTML content
+    const text = resp.text;
+    console.log(`Response status: ${resp.statusCode}`);
+    console.log(`Content length: ${text.length}`);
+
+    // Check that we got the rendered HTML
+    if (!text.includes("Example Domain")) {
+        throw new Error(`Expected content to contain 'Example Domain', got: ${text.substring(0, 200)}`);
     }
-    
-    await resp.close();
+
+    // We can also use the HTML parser
+    const title = resp.html.find('title');
+    if (title) {
+        console.log(`Page Title: ${title.text}`);
+    }
 }
 
 async function main() {
@@ -60,10 +67,10 @@ async function main() {
         await testBridgeRequest('chrome', 'Chrome');
         await testBridgeRequest('firefox', 'Firefox');
         await testRotation();
-        
-        await testRender('chrome', 'Example Domain');
-        await testRender('firefox', 'Example Domain');
-        
+
+        await testRender('chrome');
+        await testRender('firefox');
+
         console.log("All tests passed!");
     } catch (e) {
         console.error("Test failed:", e);
@@ -74,4 +81,3 @@ async function main() {
 }
 
 main();
-

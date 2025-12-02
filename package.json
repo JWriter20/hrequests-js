@@ -1,8 +1,8 @@
 {
   "name": "hrequests-js",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "type": "module",
-  "description": "TypeScript port of hrequests library running locally",
+  "description": "TypeScript port of hrequests library - Full-featured HTTP client with TLS fingerprinting and browser automation",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -17,7 +17,12 @@
     "scraping",
     "browser",
     "typescript",
-    "python"
+    "python",
+    "tls",
+    "fingerprinting",
+    "playwright",
+    "camoufox",
+    "patchright"
   ],
   "author": "",
   "license": "MIT",
@@ -25,16 +30,20 @@
     "camoufox-js": "^0.8.3",
     "cheerio": "^1.1.2",
     "fetch-cookie": "^3.1.0",
+    "fingerprint-generator": "^2.1.78",
+    "fingerprint-injector": "^2.1.78",
     "header-generator": "^2.1.78",
     "koffi": "^2.14.1",
     "patchright": "^1.57.0",
     "patchright-core": "^1.57.0",
     "playwright": "^1.57.0",
     "tough-cookie": "^6.0.0",
-    "undici": "^6.19.8"
+    "undici": "^6.19.8",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.14.10",
+    "@types/uuid": "^9.0.0",
     "eslint": "^8.57.1",
     "typescript": "^5.5.2"
   }

@@ -24,10 +24,9 @@ function isValidIpString(ip) {
 }
 
 async function main() {
-  let response = null;
   try {
-    response = await hrequests.get(IP_ENDPOINT, { headers: { Accept: "application/json" } });
-    const payload = await response.json();
+    const response = await hrequests.get(IP_ENDPOINT, { headers: { Accept: "application/json" } });
+    const payload = response.json();
     const ip = extractIp(payload);
 
     if (typeof ip !== "string" || !isValidIpString(ip)) {
@@ -36,9 +35,6 @@ async function main() {
 
     console.log(`ipify reported public IP: ${ip}`);
   } finally {
-    if (response) {
-      await response.delete().catch(() => undefined);
-    }
     await shutdown().catch(() => undefined);
   }
 }
