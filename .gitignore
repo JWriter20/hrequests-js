@@ -1,5 +1,6 @@
 node_modules
 dist
+bin
 .venv
 .mypy_cache
 __pycache__
