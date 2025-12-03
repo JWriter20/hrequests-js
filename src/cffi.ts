@@ -6,7 +6,7 @@ import { pipeline } from 'node:stream/promises';
 import { fetch } from 'undici';
 import { platform, arch } from 'node:os';
 
-const BRIDGE_VERSION = '3.';
+const BRIDGE_VERSION = '3.1';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const BIN_DIR = resolve(__dirname, '..', 'bin');
@@ -73,7 +73,7 @@ export class BridgeManager {
     // I'll stick to searching in download.
     // Locally, I'll save it as `hrequests-cgo${ext}` to simplify?
     // No, versioning is important.
-    return join(BIN_DIR, `hrequests-cgo-${this.getPlatformArch().os}-${this.getPlatformArch().arch}${this.getPlatformArch().ext}`);
+    return join(BIN_DIR, `hrequests-cgo-${BRIDGE_VERSION}-${this.getPlatformArch().os}-${this.getPlatformArch().arch}${this.getPlatformArch().ext}`);
   }
 
   async ensureBridge(): Promise<void> {
