@@ -43,6 +43,8 @@ export interface BrowserSessionOptions {
   headless?: boolean;
   /** Enable browser cache */
   enableCache?: boolean;
+  /** GeoIP handling when using proxy. Default: true if proxy is present */
+  geoip?: boolean;
   /** Additional launch options */
   [key: string]: unknown;
 }
@@ -133,7 +135,7 @@ export class BrowserSession {
       const instance = await Camoufox({
         headless: this.headless,
         proxy: proxyConfig,
-        geoip: !!proxyConfig,
+        geoip: this.options.geoip ?? !!proxyConfig,
         // humanize: this.mockHuman, // if supported
       });
 
