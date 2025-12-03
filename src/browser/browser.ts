@@ -127,9 +127,7 @@ export class BrowserSession {
   async init(): Promise<void> {
     const proxyConfig = this.proxy?.toPlaywright();
 
-    // Generate fingerprint for the browser
-    const fp = fingerprint.generateForBrowser(this.browserType, this.os);
-
+    // Camoufox handles all fingerprinting by default
     if (this.browserType === 'firefox') {
       // Use Camoufox for Firefox
       const instance = await Camoufox({
@@ -142,12 +140,13 @@ export class BrowserSession {
         this.browserInstance = instance;
         this.context = await this.browserInstance.newContext({
           ignoreHTTPSErrors: !this.verify,
-          extraHTTPHeaders: fp.headers,
         });
       } else {
         this.context = instance;
       }
     } else {
+      // Generate fingerprint for the browser
+      const fp = fingerprint.generateForBrowser(this.browserType, this.os);
       // Use Patchright for Chrome
       this.browserInstance = await patchright.launch({
         headless: this.headless,
@@ -161,11 +160,12 @@ export class BrowserSession {
         ignoreHTTPSErrors: !this.verify,
         extraHTTPHeaders: fp.headers,
       });
+
+      await fingerprint.injectContext(this.context, fp);
     }
 
     // Inject fingerprint
     if (this.context) {
-      await fingerprint.injectContext(this.context, fp);
       this.page = await this.context.newPage();
     }
   }

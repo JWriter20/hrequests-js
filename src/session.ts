@@ -64,10 +64,6 @@ export interface RequestOptions {
   proxy?: string | Proxy;
   /** URL parameters */
   params?: Record<string, string | number | boolean>;
-  /** Render in browser instead of making HTTP request */
-  render?: boolean | BrowserSessionOptions;
-  /** Browser for fingerprinting */
-  browser?: BrowserName;
 }
 
 /**
@@ -216,35 +212,7 @@ export class TLSSession extends TLSClient {
       timeout,
       proxy,
       params,
-      render: renderOption,
     } = options;
-
-    // Handle render option - use browser to render JS, then return Response with final content
-    if (renderOption) {
-      const renderOpts = typeof renderOption === 'boolean' ? {} : renderOption;
-      const browserSession = await this.render(url, renderOpts as Omit<BrowserSessionOptions, 'session' | 'browser'>);
-
-      // Get the rendered content and cookies from the browser
-      const content = await browserSession.getContent();
-      const browserCookies = await browserSession.getCookies();
-      const statusCode = browserSession.statusCode || 200;
-      const finalUrl = browserSession.url;
-
-      // Close the browser session
-      await browserSession.close();
-
-      // Return a Response with the rendered content
-      return new Response({
-        url: finalUrl,
-        statusCode,
-        headers: browserSession.headers,
-        cookies: browserCookies,
-        raw: Buffer.from(content),
-        session: this,
-        browser: this.browser,
-        version: this._version,
-      });
-    }
 
     // Build URL with params
     let finalUrl = url;

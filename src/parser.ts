@@ -362,8 +362,10 @@ export class Element {
   }
 
   async screenshot(path?: string): Promise<Buffer | void> {
-    const method = this._getBrowserMethod('screenshot');
-    if (method) return method(path) as Promise<Buffer | void>;
+    if (!this.brSession) {
+      throw new NotRenderedException('Method screenshot only allowed in BrowserSession');
+    }
+    return this.brSession.screenshot({ selector: this.cssPath, path });
   }
 
   toString(): string {
@@ -407,6 +409,17 @@ export class HTML extends Element {
    */
   get url(): string {
     return (this as any)._url;
+  }
+
+  /**
+   * Take a screenshot of the full page
+   */
+  async screenshot(path?: string, options: { fullPage?: boolean } = {}): Promise<Buffer | void> {
+    if (!this._session || !('page' in this._session)) {
+      throw new NotRenderedException('Method screenshot only allowed in BrowserSession');
+    }
+    const { fullPage = true } = options;
+    return (this._session as BrowserSession).screenshot({ path, fullPage });
   }
 
   /**

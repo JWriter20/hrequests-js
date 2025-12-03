@@ -38,27 +38,33 @@ async function testRender(browser) {
     console.log(`Testing Render with ${browser}...`);
     // Using a simpler page for speed
     const url = "https://example.com";
-    const resp = await hrequests.get(url, {
-        render: {
-            browser,
-            headless: true
-        }
+
+    // Python pattern: page = hrequests.render(url, browser=browser, headless=True)
+    const { render } = await import("../dist/index.js");
+    const page = await render(url, {
+        browser,
+        headless: true
     });
 
-    // resp is a Response with the rendered HTML content
-    const text = resp.text;
-    console.log(`Response status: ${resp.statusCode}`);
-    console.log(`Content length: ${text.length}`);
+    try {
+        // Get the rendered HTML content from the browser session
+        const text = await page.getContent();
+        console.log(`Status code: ${page.statusCode}`);
+        console.log(`Content length: ${text.length}`);
 
-    // Check that we got the rendered HTML
-    if (!text.includes("Example Domain")) {
-        throw new Error(`Expected content to contain 'Example Domain', got: ${text.substring(0, 200)}`);
-    }
+        // Check that we got the rendered HTML
+        if (!text.includes("Example Domain")) {
+            throw new Error(`Expected content to contain 'Example Domain', got: ${text.substring(0, 200)}`);
+        }
 
-    // We can also use the HTML parser
-    const title = resp.html.find('title');
-    if (title) {
-        console.log(`Page Title: ${title.text}`);
+        // We can also use the HTML parser
+        const html = await page.html;
+        const title = html.find('title');
+        if (title) {
+            console.log(`Page Title: ${title.text}`);
+        }
+    } finally {
+        await page.close();
     }
 }
 
