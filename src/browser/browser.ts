@@ -133,6 +133,7 @@ export class BrowserSession {
       const instance = await Camoufox({
         headless: this.headless,
         proxy: proxyConfig,
+        geoip: !!proxyConfig,
         // humanize: this.mockHuman, // if supported
       });
 
