@@ -4,7 +4,6 @@
  */
 
 import type { BrowserContext, Page, Response as PlaywrightResponse } from 'playwright';
-import { Camoufox } from 'camoufox-js';
 import { chromium as patchright, type Browser as PatchrightBrowser } from 'patchright';
 import { HTML } from '../parser.js';
 import { Response } from '../response.js';
@@ -131,7 +130,8 @@ export class BrowserSession {
 
     // Camoufox handles all fingerprinting by default
     if (this.browserType === 'firefox') {
-      // Use Camoufox for Firefox
+      // Use Camoufox for Firefox - lazy import to avoid loading when not needed
+      const { Camoufox } = await import('camoufox-js');
       const instance = await Camoufox({
         headless: this.headless,
         proxy: proxyConfig,
