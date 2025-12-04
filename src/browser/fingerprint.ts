@@ -151,8 +151,22 @@ export class BrowserFingerprint {
   }
 }
 
-// Singleton instance
-export const fingerprint = new BrowserFingerprint();
+// Lazy singleton instance - avoids loading Bayesian network JSON at module load time
+let _fingerprint: BrowserFingerprint | null = null;
+
+export function getFingerprint(): BrowserFingerprint {
+  if (!_fingerprint) {
+    _fingerprint = new BrowserFingerprint();
+  }
+  return _fingerprint;
+}
+
+// For backwards compatibility - lazy proxy that defers instantiation until first access
+export const fingerprint: BrowserFingerprint = new Proxy({} as BrowserFingerprint, {
+  get(_, prop: keyof BrowserFingerprint) {
+    return (getFingerprint() as any)[prop];
+  },
+});
 
 /**
  * Generate headers for a specific browser configuration

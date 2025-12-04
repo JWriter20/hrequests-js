@@ -8,6 +8,7 @@ export { Proxy } from './proxy.js';
 export {
   BrowserFingerprint,
   fingerprint,
+  getFingerprint,
   generateHeaders,
   getMajorVersion,
   getTlsVersion,

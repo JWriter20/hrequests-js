@@ -16,7 +16,15 @@ import {
   BrowserTimeoutException,
   NotRenderedException
 } from '../exceptions.js';
-import { fingerprint, OS_MAP, type OSName } from './fingerprint.js';
+// Type-only import to avoid loading heavy fingerprint dependencies at module load
+import type { OSName } from './fingerprint.js';
+
+// OS_MAP defined inline to avoid importing fingerprint.js at module level
+const OS_MAP: Record<string, OSName> = {
+  'win': 'windows',
+  'mac': 'macos',
+  'lin': 'linux',
+};
 import type { TLSSession } from '../session.js';
 
 export type BrowserType = 'firefox' | 'chrome';
@@ -148,8 +156,10 @@ export class BrowserSession {
         this.context = instance;
       }
     } else {
-      // Generate fingerprint for the browser
-      const fp = fingerprint.generateForBrowser(this.browserType, this.os);
+      // Dynamically import fingerprint to avoid loading Bayesian network JSON at module load
+      const { getFingerprint } = await import('./fingerprint.js');
+      const fp = getFingerprint().generateForBrowser(this.browserType, this.os);
+
       // Use Patchright for Chrome
       this.browserInstance = await patchright.launch({
         headless: this.headless,
@@ -164,7 +174,7 @@ export class BrowserSession {
         extraHTTPHeaders: fp.headers,
       });
 
-      await fingerprint.injectContext(this.context, fp);
+      await getFingerprint().injectContext(this.context, fp);
     }
 
     // Inject fingerprint
