@@ -158,7 +158,8 @@ export class BrowserSession {
     } else {
       // Dynamically import fingerprint to avoid loading Bayesian network JSON at module load
       const { getFingerprint } = await import('./fingerprint.js');
-      const fp = getFingerprint().generateForBrowser(this.browserType, this.os);
+      const fpInstance = getFingerprint();
+      const fp = await fpInstance.generateForBrowser(this.browserType, this.os);
 
       // Use Patchright for Chrome
       this.browserInstance = await patchright.launch({
@@ -174,7 +175,7 @@ export class BrowserSession {
         extraHTTPHeaders: fp.headers,
       });
 
-      await getFingerprint().injectContext(this.context, fp);
+      await fpInstance.injectContext(this.context, fp);
     }
 
     // Inject fingerprint

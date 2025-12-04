@@ -83,6 +83,7 @@ export class TLSSession extends TLSClient {
   private _os: OSType;
   private _version: number;
   private _tlsVersion: number;
+  private _headersInitialized: Promise<void> | null = null;
 
   constructor(options: TLSSessionOptions) {
     const { browser, version, os, headers, temp, verify, timeout, ...tlsOptions } = options;
@@ -107,14 +108,25 @@ export class TLSSession extends TLSClient {
     this.temp = temp ?? false;
     this.defaultVerify = verify ?? true;
     this.defaultTimeout = timeout ?? 30;
+    this._version = tlsVersion;
 
     // Set headers
     if (headers) {
       this.headers = new CaseInsensitiveDict(headers);
       this._version = version || getMajorVersion(headers) || tlsVersion;
     } else {
-      this.resetHeaders(this._os);
-      this._version = this._tlsVersion;
+      // Initialize headers asynchronously - will be awaited before first request
+      this._headersInitialized = this.resetHeaders(this._os);
+    }
+  }
+
+  /**
+   * Ensure headers are initialized before making requests
+   */
+  private async ensureHeadersInitialized(): Promise<void> {
+    if (this._headersInitialized) {
+      await this._headersInitialized;
+      this._headersInitialized = null;
     }
   }
 
@@ -154,15 +166,15 @@ export class TLSSession extends TLSClient {
       throw new Error(`'${value}' is not a valid OS: (win, mac, lin)`);
     }
     this._os = value;
-    this.resetHeaders(value);
+    this._headersInitialized = this.resetHeaders(value);
   }
 
   /**
    * Rotates the headers of the session
    */
-  resetHeaders(os?: OSType): void {
+  async resetHeaders(os?: OSType): Promise<void> {
     const osName = OS_MAP[os || this._os] as OSName;
-    const newHeaders = generateHeaders(this.browser, {
+    const newHeaders = await generateHeaders(this.browser, {
       version: this._tlsVersion,
       os: osName,
     });
@@ -182,6 +194,7 @@ export class TLSSession extends TLSClient {
     url: string,
     options: Omit<BrowserSessionOptions, 'session' | 'browser'> = {}
   ): Promise<BrowserSession> {
+    await this.ensureHeadersInitialized();
     const proxyValue = options.proxy || this.proxy;
     return render(url, {
       ...options,
@@ -200,6 +213,7 @@ export class TLSSession extends TLSClient {
     url: string,
     options: RequestOptions = {}
   ): Promise<Response> {
+    await this.ensureHeadersInitialized();
     const {
       data,
       files,

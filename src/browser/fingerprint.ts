@@ -4,9 +4,10 @@
  * This is the JavaScript equivalent of Python's browserforge
  */
 
-import { FingerprintGenerator } from 'fingerprint-generator';
-import { FingerprintInjector } from 'fingerprint-injector';
 import type { BrowserContext, Page } from 'playwright';
+// Type-only imports are erased at compile time - no runtime loading
+import type { FingerprintGenerator } from 'fingerprint-generator';
+import type { FingerprintInjector } from 'fingerprint-injector';
 
 export type BrowserName = 'firefox' | 'chrome';
 export type OSName = 'windows' | 'macos' | 'linux';
@@ -27,23 +28,58 @@ export interface GeneratedFingerprint {
   userAgent: string;
 }
 
+// Cached constructor references for lazy loading (actual runtime imports)
+let _FingerprintGeneratorCtor: typeof FingerprintGenerator | null = null;
+let _FingerprintInjectorCtor: typeof FingerprintInjector | null = null;
+
+async function loadFingerprintGenerator(): Promise<typeof FingerprintGenerator> {
+  if (!_FingerprintGeneratorCtor) {
+    const mod = await import('fingerprint-generator');
+    _FingerprintGeneratorCtor = mod.FingerprintGenerator;
+  }
+  return _FingerprintGeneratorCtor;
+}
+
+async function loadFingerprintInjector(): Promise<typeof FingerprintInjector> {
+  if (!_FingerprintInjectorCtor) {
+    const mod = await import('fingerprint-injector');
+    _FingerprintInjectorCtor = mod.FingerprintInjector;
+  }
+  return _FingerprintInjectorCtor;
+}
+
 /**
  * Browser fingerprint generator
  * Generates realistic browser fingerprints for anti-detection
  */
 export class BrowserFingerprint {
-  private generator: FingerprintGenerator;
-  private injector: FingerprintInjector;
+  private generator: FingerprintGenerator | null = null;
+  private injector: FingerprintInjector | null = null;
+  private _initPromise: Promise<void> | null = null;
 
-  constructor() {
-    this.generator = new FingerprintGenerator();
-    this.injector = new FingerprintInjector();
+  private async ensureInitialized(): Promise<void> {
+    if (this.generator && this.injector) return;
+
+    if (!this._initPromise) {
+      this._initPromise = (async () => {
+        const [GeneratorCtor, InjectorCtor] = await Promise.all([
+          loadFingerprintGenerator(),
+          loadFingerprintInjector(),
+        ]);
+        this.generator = new GeneratorCtor();
+        this.injector = new InjectorCtor();
+      })();
+    }
+
+    await this._initPromise;
   }
 
   /**
    * Generate a fingerprint with the given options
    */
-  generate(options: FingerprintOptions = {}): GeneratedFingerprint {
+  async generate(options: FingerprintOptions = {}): Promise<GeneratedFingerprint> {
+    await this.ensureInitialized();
+
     const browserSpec: Record<string, unknown> = {};
 
     if (options.browsers) {
@@ -62,7 +98,7 @@ export class BrowserFingerprint {
       browserSpec.maxVersion = options.maxVersion;
     }
 
-    const result = this.generator.getFingerprint(browserSpec as any);
+    const result = this.generator!.getFingerprint(browserSpec as any);
     const fingerprint = result.fingerprint || result;
     const headers = result.headers || {};
 
@@ -76,11 +112,11 @@ export class BrowserFingerprint {
   /**
    * Generate a fingerprint for a specific browser
    */
-  generateForBrowser(
+  async generateForBrowser(
     browser: BrowserName,
     os?: OSName,
     version?: number
-  ): GeneratedFingerprint {
+  ): Promise<GeneratedFingerprint> {
     const options: FingerprintOptions = {
       browsers: [browser],
       devices: ['desktop'],
@@ -102,8 +138,9 @@ export class BrowserFingerprint {
    * Inject fingerprint into a Playwright browser context
    */
   async injectContext(context: BrowserContext, fingerprint?: GeneratedFingerprint): Promise<void> {
-    const fp = fingerprint || this.generate();
-    await this.injector.attachFingerprintToPlaywright(context, {
+    await this.ensureInitialized();
+    const fp = fingerprint || await this.generate();
+    await this.injector!.attachFingerprintToPlaywright(context, {
       fingerprint: fp.fingerprint,
       headers: fp.headers,
     });
@@ -113,7 +150,7 @@ export class BrowserFingerprint {
    * Inject fingerprint into a Playwright page
    */
   async injectPage(page: Page, fingerprint?: GeneratedFingerprint): Promise<void> {
-    const fp = fingerprint || this.generate();
+    const fp = fingerprint || await this.generate();
 
     // Set extra HTTP headers
     await page.setExtraHTTPHeaders(fp.headers);
@@ -162,6 +199,7 @@ export function getFingerprint(): BrowserFingerprint {
 }
 
 // For backwards compatibility - lazy proxy that defers instantiation until first access
+// Note: Methods are now async, so callers should await the results
 export const fingerprint: BrowserFingerprint = new Proxy({} as BrowserFingerprint, {
   get(_, prop: keyof BrowserFingerprint) {
     return (getFingerprint() as any)[prop];
@@ -172,15 +210,15 @@ export const fingerprint: BrowserFingerprint = new Proxy({} as BrowserFingerprin
  * Generate headers for a specific browser configuration
  * Compatible with Python hrequests generate_headers function
  */
-export function generateHeaders(
+export async function generateHeaders(
   browser: BrowserName,
   options: {
     version?: number;
     os?: OSName;
     locales?: string[];
   } = {}
-): Record<string, string> {
-  const fp = fingerprint.generateForBrowser(
+): Promise<Record<string, string>> {
+  const fp = await fingerprint.generateForBrowser(
     browser,
     options.os,
     options.version
