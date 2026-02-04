@@ -8,15 +8,15 @@ TypeScript port of the [hrequests](https://github.com/daijro/hrequests) Python l
 - **Browser Automation**: Seamlessly switch to headless browsers (via Playwright, Camoufox, or Patchright) for JavaScript-heavy sites.
 - **Requests-like API**: Familiar, ergonomic API for Python `requests` users.
 
-Unlike previous versions, this is a **direct port** and does **not** require a separate Python installation or service.
+`hrequests-js` is a direct port and **requires Go 1.21+** to build its native bridge on the first run. This ensures that the TLS fingerprints are perfectly accurate and that the bridge is compatible with your specific system.
 
 ## Prerequisites
 
 - Node.js 18+
-- **Go 1.21+** (Required for building the native bridge)
+- **Go 1.21+** (Required for the native bridge)
   - **macOS**: `brew install go`
-  - **Windows**: [Download Installer](https://go.dev/dl/) or `winget install GoLang.Go`
-  - **Linux**: Follow [Go Installation Instructions](https://go.dev/doc/install)
+  - **Windows**: [Download Installer](https://go.dev/dl/)
+  - **Linux**: `sudo apt install golang` (or equivalent)
 - Supported Platforms:
   - macOS (x64, arm64)
   - Linux (x64, arm64, arm-7)

@@ -1,15 +1,16 @@
 import koffi from 'koffi';
 import { resolve, join, dirname } from 'node:path';
-import { existsSync, mkdirSync, chmodSync, createWriteStream, unlinkSync } from 'node:fs';
+import { existsSync, mkdirSync, chmodSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { pipeline } from 'node:stream/promises';
-import { fetch } from 'undici';
 import { platform, arch } from 'node:os';
+import { execSync } from 'node:child_process';
+import { MissingLibraryException } from './exceptions.js';
 
 const BRIDGE_VERSION = '3.1';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const BIN_DIR = resolve(__dirname, '..', 'bin');
+const BRIDGE_SRC_DIR = resolve(__dirname, '..', 'bridge');
 
 // Go String Struct Definition for FFI
 const GoString = koffi.struct('GoString', {
@@ -21,6 +22,7 @@ export class BridgeManager {
   private binPath: string = '';
   private lib: any = null;
   private port: number = 0;
+  private loadPromise: Promise<void> | null = null;
 
   constructor() {
     this.ensureBinDir();
@@ -62,109 +64,93 @@ export class BridgeManager {
 
   private getBinPath(): string {
     const { os, arch, ext } = this.getPlatformArch();
-    // Use the exact naming convention from Python hrequests to match release assets
-    // But we can simplify the local name if we want, or keep it same.
-    // Let's resolve the full name dynamically if needed, but for checking existence:
-    // We will check for any file starting with hrequests-cgo-{BRIDGE_VERSION} and matching arch/os.
-    // But simplest is to just use the exact expected name.
-
-    // However, finding the exact asset name requires listing them or guessing.
-    // Python does `startswith` check.
-    // I'll stick to searching in download.
-    // Locally, I'll save it as `hrequests-cgo${ext}` to simplify?
-    // No, versioning is important.
-    return join(BIN_DIR, `hrequests-cgo-${BRIDGE_VERSION}-${this.getPlatformArch().os}-${this.getPlatformArch().arch}${this.getPlatformArch().ext}`);
+    return join(BIN_DIR, `hrequests-cgo-${BRIDGE_VERSION}-${os}-${arch}${ext}`);
   }
 
   async ensureBridge(): Promise<void> {
-    // Check if we have a matching file in BIN_DIR
-    // We'll use a simpler check: does current binPath exist?
-    // Note: getBinPath constructs a "target" path, but the actual downloaded file might differ in name slightly if we used the asset name.
-    // Let's enforce the name to be what we expect.
-
     if (existsSync(this.binPath)) return;
-    await this.downloadBridge();
-  }
 
-  private async downloadBridge() {
-    console.log('Downloading hrequests-cgo binary...');
-    const releasesUrl = 'https://api.github.com/repos/daijro/hrequests/releases';
-    const resp = await fetch(releasesUrl);
-    if (!resp.ok) throw new Error(`Failed to fetch releases: ${resp.statusText}`);
-
-    const releases = await resp.json() as any[];
-    const { os, arch, ext } = this.getPlatformArch();
-
-    let downloadUrl: string | undefined;
-
-    // Logic to match the Python implementation's asset selection
-    const filePref = `hrequests-cgo-${BRIDGE_VERSION}`;
-    const fileCont = os; // 'darwin', 'windows-4.0', 'linux'
-
-    for (const release of releases) {
-      for (const asset of release.assets) {
-        const name = asset.name as string;
-        if (name.startsWith(filePref) &&
-          name.includes(fileCont) &&
-          name.endsWith(ext) &&
-          name.includes(arch)) {
-          downloadUrl = asset.browser_download_url;
-          break;
-        }
-      }
-      if (downloadUrl) break;
+    if (!existsSync(join(BRIDGE_SRC_DIR, 'server.go'))) {
+      throw new MissingLibraryException(
+        'Go bridge source code not found in "bridge/" directory. Please ensure the repository is complete.'
+      );
     }
 
-    if (!downloadUrl) throw new Error(`No matching binary found for ${os}-${arch}`);
+    try {
+      // Check if go is installed
+      execSync('go version', { stdio: 'ignore' });
+    } catch (e) {
+      const p = platform();
+      let installCmd = '';
+      if (p === 'darwin') {
+        installCmd = ' (brew install go)';
+      } else if (p === 'linux') {
+        installCmd = ' (sudo apt install golang)';
+      } else if (p === 'win32') {
+        installCmd = ' (winget install GoLang.Go)';
+      }
+      throw new MissingLibraryException(
+        `Go 1.21+ is required to build the hrequests bridge. Please install it${installCmd} or visit https://go.dev/dl/`
+      );
+    }
 
-    const fileResp = await fetch(downloadUrl);
-    if (!fileResp.ok) throw new Error(`Failed to download binary: ${fileResp.statusText}`);
-
-    const fileStream = createWriteStream(this.binPath);
-    await pipeline(fileResp.body as any, fileStream);
-
-    if (platform() !== 'win32') {
-      chmodSync(this.binPath, 0o755);
+    try {
+      console.log('Building hrequests-cgo binary locally...');
+      execSync(`go build -buildmode=c-shared -o "${this.binPath}" server.go`, {
+        cwd: BRIDGE_SRC_DIR,
+        stdio: 'inherit'
+      });
+    } catch (e) {
+      throw new Error(
+        `Failed to build hrequests bridge locally: ${e instanceof Error ? e.message : String(e)}`
+      );
     }
   }
 
   async load(): Promise<void> {
-    await this.ensureBridge();
+    // Prevent multiple concurrent loads
+    if (this.loadPromise) return this.loadPromise;
 
-    try {
-      this.lib = koffi.load(this.binPath);
-    } catch (e) {
-      console.error("Failed to load library at", this.binPath);
-      throw e;
-    }
+    this.loadPromise = (async () => {
+      await this.ensureBridge();
 
-    // Bind functions
-    const GetOpenPort = this.lib.func('GetOpenPort', 'int', []);
-    const StartServer = this.lib.func('StartServer', 'void', [GoString]);
-    const StopServer = this.lib.func('StopServer', 'void', []);
-    const DestroySession = this.lib.func('DestroySession', 'void', [GoString]);
-    const DestroyAll = this.lib.func('DestroyAll', 'void', []);
+      try {
+        this.lib = koffi.load(this.binPath);
+      } catch (e) {
+        this.loadPromise = null;
+        console.error("Failed to load library at", this.binPath);
+        throw e;
+      }
 
-    this.lib.functions = {
-      GetOpenPort,
-      StartServer,
-      StopServer,
-      DestroySession,
-      DestroyAll
-    };
+      // Bind functions
+      const GetOpenPort = this.lib.func('GetOpenPort', 'int', []);
+      const StartServer = this.lib.func('StartServer', 'void', [GoString]);
+      const StopServer = this.lib.func('StopServer', 'void', []);
+      const DestroySession = this.lib.func('DestroySession', 'void', [GoString]);
+      const DestroyAll = this.lib.func('DestroyAll', 'void', []);
 
-    // Start Server
-    this.port = GetOpenPort();
-    if (!this.port) throw new Error("Could not find an open port from Bridge");
+      this.lib.functions = {
+        GetOpenPort,
+        StartServer,
+        StopServer,
+        DestroySession,
+        DestroyAll
+      };
 
-    const portStr = String(this.port);
-    StartServer({ p: portStr, n: portStr.length });
+      // Start Server
+      this.port = GetOpenPort();
+      if (!this.port) {
+        this.loadPromise = null;
+        throw new Error("Could not find an open port from Bridge");
+      }
 
-    // Wait for health check? Python doesn't seem to wait explicitly, but maybe we should.
-    // We can assume it starts quickly.
-    // Python code: calls StartServer(ref) then proceeds.
+      const portStr = String(this.port);
+      StartServer({ p: portStr, n: portStr.length });
 
-    console.log(`Bridge server started on port ${this.port}`);
+      console.log(`Bridge server started on port ${this.port}`);
+    })();
+
+    return this.loadPromise;
   }
 
   getPort(): number {
