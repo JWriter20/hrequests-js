@@ -1,12 +1,13 @@
 {
   "name": "hrequests-js",
-  "version": "0.1.18",
+  "version": "0.2.0",
   "type": "module",
   "description": "TypeScript port of hrequests library - Full-featured HTTP client with TLS fingerprinting and browser automation",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "bridge"
   ],
   "scripts": {
     "prepublishOnly": "npm run build",
