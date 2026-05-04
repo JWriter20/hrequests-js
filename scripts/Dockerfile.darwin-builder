@@ -1,0 +1,37 @@
+# Linux Docker image for cross-compiling the Go bridge to darwin/arm64 and
+# darwin/amd64 using crazymax/osxcross (which bundles a maintained osxcross
+# toolchain + an Apple SDK extracted from official Xcode CLT).
+#
+# Built and used by scripts/build-binaries.sh.
+#
+# Base notes:
+#   - debian:trixie picked for glibc 2.41 (osxcross wrappers need 2.38+;
+#     bookworm-based golang images only ship 2.36 and fail to load them).
+#   - clang/llvm/libxml2/zlib1g are runtime deps the osxcross wrappers
+#     shell out to or dlopen.
+#   - libtapi.so.12git and libxar.so.1 are bundled inside crazymax/osxcross
+#     itself; LD_LIBRARY_PATH=/osxcross/lib lets the linker find them.
+
+FROM crazymax/osxcross:latest AS osxcross
+FROM debian:trixie
+
+ARG GO_VERSION=1.22.10
+
+RUN apt-get update -qq && \
+    apt-get install -y -qq --no-install-recommends \
+        ca-certificates curl xz-utils libc6 libstdc++6 git gcc \
+        clang llvm libxml2 zlib1g \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" | \
+    tar -C /usr/local -xz
+
+COPY --from=osxcross /osxcross /osxcross
+
+ENV PATH="/osxcross/bin:/usr/local/go/bin:${PATH}"
+ENV LD_LIBRARY_PATH="/osxcross/lib"
+ENV GOPATH=/go
+
+RUN aarch64-apple-darwin25.1-clang --version >/dev/null && \
+    o64-clang --version >/dev/null && \
+    go version

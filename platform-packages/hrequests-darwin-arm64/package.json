@@ -1,0 +1,21 @@
+{
+  "name": "hrequests-darwin-arm64",
+  "version": "0.4.0",
+  "description": "darwin-arm64 prebuilt bridge binary for hrequests-js",
+  "main": "bridge.dylib",
+  "files": [
+    "bridge.dylib",
+    "README.md"
+  ],
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "arm64"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JWriter20/hrequests-js.git"
+  }
+}

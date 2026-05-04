@@ -1,0 +1,21 @@
+{
+  "name": "hrequests-win32-x64",
+  "version": "0.4.0",
+  "description": "win32-x64 prebuilt bridge binary for hrequests-js",
+  "main": "bridge.dll",
+  "files": [
+    "bridge.dll",
+    "README.md"
+  ],
+  "os": [
+    "win32"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JWriter20/hrequests-js.git"
+  }
+}

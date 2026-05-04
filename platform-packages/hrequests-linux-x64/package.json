@@ -1,0 +1,21 @@
+{
+  "name": "hrequests-linux-x64",
+  "version": "0.4.0",
+  "description": "linux-x64 prebuilt bridge binary for hrequests-js",
+  "main": "bridge.so",
+  "files": [
+    "bridge.so",
+    "README.md"
+  ],
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JWriter20/hrequests-js.git"
+  }
+}

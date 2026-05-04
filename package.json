@@ -1,13 +1,12 @@
 {
   "name": "hrequests-js",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "description": "TypeScript port of hrequests library - Full-featured HTTP client with TLS fingerprinting and browser automation",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
-    "dist",
-    "bridge"
+    "dist"
   ],
   "scripts": {
     "prepublishOnly": "npm run build",
@@ -52,5 +51,12 @@
     "@types/uuid": "^9.0.0",
     "eslint": "^8.57.1",
     "typescript": "^5.5.2"
+  },
+  "optionalDependencies": {
+    "hrequests-darwin-arm64": "0.4.0",
+    "hrequests-darwin-x64": "0.4.0",
+    "hrequests-linux-x64": "0.4.0",
+    "hrequests-linux-arm64": "0.4.0",
+    "hrequests-win32-x64": "0.4.0"
   }
 }

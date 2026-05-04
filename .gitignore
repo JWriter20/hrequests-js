@@ -2,6 +2,7 @@ node_modules
 .npmrc
 dist
 bin
+platform-packages/*/bridge.*
 .venv
 .mypy_cache
 __pycache__
