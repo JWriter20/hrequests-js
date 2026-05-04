@@ -1,4 +1,4 @@
-# hrequests-win32-x64
+# hrequests-windows-x64
 
 Platform-specific prebuilt bridge binary for [hrequests-js](https://github.com/JWriter20/hrequests-js).
 

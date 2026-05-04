@@ -1,7 +1,7 @@
 {
-  "name": "hrequests-win32-x64",
-  "version": "0.4.0",
-  "description": "win32-x64 prebuilt bridge binary for hrequests-js",
+  "name": "hrequests-windows-x64",
+  "version": "0.4.1",
+  "description": "windows-x64 prebuilt bridge binary for hrequests-js",
   "main": "bridge.dll",
   "files": [
     "bridge.dll",

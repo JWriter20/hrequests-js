@@ -1,6 +1,6 @@
 {
   "name": "hrequests-linux-arm64",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "linux-arm64 prebuilt bridge binary for hrequests-js",
   "main": "bridge.so",
   "files": [

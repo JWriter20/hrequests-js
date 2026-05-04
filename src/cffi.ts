@@ -18,7 +18,10 @@ export class BridgeManager {
   private loadPromise: Promise<void> | null = null;
 
   private resolveBinPath(): string {
-    const pkgName = `hrequests-${platform()}-${arch()}`;
+    // Node reports Windows as "win32" but the npm package is "windows" —
+    // npm's spam-detection heuristic blocks the literal "win32" token.
+    const osKey = platform() === 'win32' ? 'windows' : platform();
+    const pkgName = `hrequests-${osKey}-${arch()}`;
     try {
       return require.resolve(pkgName);
     } catch {
