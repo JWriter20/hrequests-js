@@ -22,7 +22,10 @@ import (
 	"github.com/google/uuid"
 )
 
-var srv *http.Server
+var (
+	srv       *http.Server
+	startOnce sync.Once
+)
 
 /*
 Offers a http server that can be used to make requests to tls-client
@@ -217,8 +220,12 @@ func startServer(port string) {
 
 //export StartServer
 func StartServer(port string) {
-	// exposed function to start the server in a goroutine
-	go startServer(port)
+	// exposed function to start the server in a goroutine.
+	// Guarded by sync.Once so a duplicate call is a no-op rather than
+	// racing two listeners on the same port.
+	startOnce.Do(func() {
+		go startServer(port)
+	})
 }
 
 //export StopServer

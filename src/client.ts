@@ -390,10 +390,8 @@ export class TLSClient {
     url: string,
     options: TLSRequestOptions = {}
   ): Promise<BridgeResponse> {
-    // Ensure bridge is loaded
-    if (bridge.getPort() === 0) {
-      await bridge.load();
-    }
+    // Ensure bridge is loaded (idempotent — caches in-flight/resolved promise)
+    await bridge.load();
 
     const { payload, headers } = this.buildRequest(method, url, options);
 
