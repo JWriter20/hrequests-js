@@ -46,8 +46,8 @@ docker run --rm --platform linux/arm64 \
     CGO_ENABLED=1 go build -buildmode=c-shared \
     -o /out/hrequests-linux-arm64/bridge.so server.go"
 
-# ----- win32-x64 (Docker amd64 + mingw) -----
-echo "==> win32-x64 (mingw-w64 in Docker)"
+# ----- windows-x64 (Docker amd64 + mingw) -----
+echo "==> windows-x64 (mingw-w64 in Docker)"
 docker run --rm \
   -v "$BRIDGE_DIR":/src \
   -v "$PKG_DIR":/out \
@@ -55,7 +55,7 @@ docker run --rm \
   bash -c "apt-get update -qq && apt-get install -y -qq gcc-mingw-w64-x86-64 >/dev/null 2>&1 && \
     CGO_ENABLED=1 GOOS=windows GOARCH=amd64 CC=x86_64-w64-mingw32-gcc \
     go build -buildmode=c-shared \
-    -o /out/hrequests-win32-x64/bridge.dll server.go"
+    -o /out/hrequests-windows-x64/bridge.dll server.go"
 
 # ----- darwin-arm64 (osxcross in Docker) -----
 echo "==> darwin-arm64 (osxcross)"

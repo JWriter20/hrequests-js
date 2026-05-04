@@ -14,7 +14,7 @@ who publishes those binaries.
 | `hrequests-darwin-x64` | `bridge.dylib` for macOS Intel (min 10.13) |
 | `hrequests-linux-x64` | `bridge.so` for Linux glibc x86_64 |
 | `hrequests-linux-arm64` | `bridge.so` for Linux glibc arm64 |
-| `hrequests-win32-x64` | `bridge.dll` for Windows x86_64 |
+| `hrequests-windows-x64` | `bridge.dll` for Windows x86_64 (named `windows` not `win32` because npm's spam filter blocks the latter) |
 
 All six versions move in lockstep. Never publish a platform package at a
 version that does not match the main package — `optionalDependencies` pins
